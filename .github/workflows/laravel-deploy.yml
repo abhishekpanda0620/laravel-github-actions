@@ -91,7 +91,6 @@ jobs:
 
           # Enable and restart nginx
           ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem $DEPLOY_USER@$DEPLOY_SERVER "
-           sudo rm /etc/nginx/sites-enabled/laravel.conf &&
             sudo ln -s /etc/nginx/sites-available/laravel.conf /etc/nginx/sites-enabled/laravel.conf &&
             sudo systemctl restart nginx &&
             sudo chown -R www-data:www-data /var/www/laravel &&
