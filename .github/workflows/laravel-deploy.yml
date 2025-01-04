@@ -54,6 +54,9 @@ jobs:
             ./ \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }}:/var/www/laravel
 
+          ssh -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "
+           sudo chown -R ${{ secrets.DEPLOY_USER }}:${{ secrets.DEPLOY_USER }} /var/www/laravel
+
       - name: Deploy to EC2
         env:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -89,7 +92,7 @@ jobs:
               sudo chmod 664 /etc/nginx/sites-available/laravel.conf &&
               sudo ln -s /etc/nginx/sites-available/laravel.conf /etc/nginx/sites-enabled/laravel.conf &&
               sudo perl -pi -e 's/_EC2_SERVER_NAME_/$DEPLOY_SERVER/g' /etc/nginx/sites-enabled/laravel.conf &&
-              sudo systemctl restart nginx
+              sudo systemctl restart nginx && sudo chown -R www-data:www-data /var/www/laravel  
           "
 
         # Test Laravel App with curl
