@@ -64,6 +64,7 @@ jobs:
           ssh -i ~/.ssh/deploy_key.pem $DEPLOY_USER@$DEPLOY_SERVER "
             cd $DEPLOY_PATH &&
             git pull origin main &&
+            cd my-laravel-app &&
             composer install --no-dev --optimize-autoloader &&
             php artisan migrate --force &&
             php artisan config:cache &&
