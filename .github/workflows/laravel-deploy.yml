@@ -65,10 +65,7 @@ jobs:
             cd $DEPLOY_PATH &&
             git pull origin main &&
             cd my-laravel-app &&
-            composer install --no-dev --optimize-autoloader &&
-            php artisan config:cache &&
-            php artisan route:cache &&
-            php artisan view:cache
+            composer install --no-dev --optimize-autoloader 
           "
 
         # Deploy Nginx Config
