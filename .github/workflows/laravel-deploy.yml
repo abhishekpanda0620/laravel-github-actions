@@ -36,10 +36,17 @@ jobs:
           # Create .ssh directory with correct permissions
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-
-          # Write the SSH key to a file
-          echo "$SSH_KEY" > ~/.ssh/deploy_key
-
+          
+          # Write key file with proper line endings
+          echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          
+          # Set restrictive permissions
+          chmod 600 ~/.ssh/deploy_key
+          
+          # Debug key file
+          echo "Key file permissions:"
+          ls -la ~/.ssh/deploy_key
+          
           # Debug SSH key file (safely)
           echo "Checking SSH key file..."
           if [ -f ~/.ssh/deploy_key ]; then
@@ -53,6 +60,12 @@ jobs:
 
           # Add host key
           ssh-keyscan -H ${{ secrets.DEPLOY_SERVER }} >> ~/.ssh/known_hosts
+
+          echo "Validating key format..."
+          ssh-keygen -l -f ~/.ssh/deploy_key || {
+            echo "❌ Invalid key format"
+            exit 1
+          }
 
           # Test SSH connection with verbose output
           ssh -v -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "echo 'SSH connection successful'
