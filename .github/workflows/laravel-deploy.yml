@@ -46,14 +46,6 @@ jobs:
           # Test SSH connection
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "echo 'SSH connection successful'"
 
-      - name: Sync repository if not already present
-        run: |
-          rsync -avz --delete \
-            --exclude 'vendor' '.git' \
-            -e "ssh -i ~/.ssh/deploy_key.pem" \
-            ./ \
-            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }}:/var/www/laravel
-
       - name: Deploy to EC2
         env:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
