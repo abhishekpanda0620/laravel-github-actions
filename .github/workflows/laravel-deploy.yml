@@ -32,7 +32,7 @@ jobs:
 
       # Run tests
       - name: Run tests
-        run: php artisan test
+        run: cd my-laravel-app && php artisan test
 
       # Deploy Nginx configuration to EC2
       - name: Deploy Nginx Config
