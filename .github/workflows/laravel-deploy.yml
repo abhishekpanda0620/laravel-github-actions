@@ -33,49 +33,24 @@ jobs:
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
         run: |
-          # Create .ssh directory with correct permissions
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          
-          # Write key file with proper line endings
+
+          # Save the private key
           echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key.pem
-          
-          # Set restrictive permissions
-          chmod 600 ~/.ssh/deploy_key.pem
-          
-          # Debug key file
-          echo "Key file permissions:"
-          ls -la ~/.ssh/deploy_key.pem
-          
-          # Debug SSH key file (safely)
-          echo "Checking SSH key file..."
-          if [ -f ~/.ssh/deploy_key.pem ]; then
-            echo "✅ SSH key file exists"
-            ls -l ~/.ssh/deploy_key.pem
-          else
-            echo "❌ SSH key file is missing"
-          fi
-          # Set correct permissions
           chmod 600 ~/.ssh/deploy_key.pem
 
-          # Add host key
+          # Add server to known_hosts
           ssh-keyscan -H ${{ secrets.DEPLOY_SERVER }} >> ~/.ssh/known_hosts
 
-          echo "Validating key format..."
-          ssh-keygen -l -f ~/.ssh/deploy_key.pem || {
-            echo "❌ Invalid key format"
-            exit 1
-          }
-
-          # Test SSH connection with verbose output
-          ssh -v -i ~/.ssh/deploy_key.pem -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "echo 'SSH connection successful'
-          "
+          # Test SSH connection
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "echo 'SSH connection successful'"
       - name: Deploy to EC2
         env:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
           DEPLOY_PATH: /var/www/laravel
-
+        
         run: |
           ssh -i ~/.ssh/deploy_key.pem $DEPLOY_USER@$DEPLOY_SERVER "
             cd $DEPLOY_PATH &&
