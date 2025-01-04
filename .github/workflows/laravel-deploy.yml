@@ -78,11 +78,14 @@ jobs:
           NGINX_CONF_SRC: ./nginx/laravel.conf
         run: |
           # Check if nginx sites-available exists and is writable
-          ssh -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "if [ ! -d /etc/nginx/sites-available ]; then sudo mkdir -p /etc/nginx/sites-available; fi"
+          ssh -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "if [ ! -d /etc/nginx/sites-available ]; then sudo mkdir -p /etc/nginx/sites-available; fi &&
+           sudo chown ${{ secrets.DEPLOY_USER }}:${{ secrets.DEPLOY_USER }} /etc/nginx/sites-available/laravel &&
+           sudo chmod 664 /etc/nginx/sites-available/laravel
+          "
 
           # Copy Nginx config
           scp -i ~/.ssh/deploy_key.pem $NGINX_CONF_SRC ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }}:/etc/nginx/sites-available/laravel
-
+          
           # Enable and restart nginx
           ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "
             sudo ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/laravel &&
