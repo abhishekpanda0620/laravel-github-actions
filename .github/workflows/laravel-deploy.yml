@@ -1,0 +1,76 @@
+name: Deploy Laravel App to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up PHP environment
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3" # Specify your Laravel PHP version
+          extensions: mbstring, intl, bcmath
+          coverage: none
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          cd my-laravel-app
+          composer install --no-dev --no-interaction --prefer-dist
+          cp .env.example .env
+          php artisan key:generate
+
+      # Run tests
+      - name: Run tests
+        run: php artisan test
+
+      # Deploy Nginx configuration to EC2
+      - name: Deploy Nginx Config
+        env:
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          DEPLOY_PATH: /var/www/laravel
+          NGINX_CONF_SRC: ./nginx/laravel.conf
+        run: |
+          scp -i $SSH_KEY $NGINX_CONF_SRC $EC2_USER@$EC2_HOST:/etc/nginx/sites-available/laravel
+          ssh -o StrictHostKeyChecking=no -i $SSH_KEY $EC2_USER@$EC2_HOST "
+          sudo ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/laravel &&
+          sudo systemctl restart nginx &&
+          sudo chown -R www-data:www-data /var/www/laravel &&
+          sudo chmod -R 755 /var/www/laravel/storage /var/www/laravel/bootstrap/cache
+          "
+      - name: Deploy to EC2
+        env:
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          DEPLOY_PATH: /var/www/laravel
+        run: |
+          cd my-laravel-app
+          echo "$SSH_KEY" > private_key.pem
+          chmod 600 private_key.pem
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST "
+            cd $DEPLOY_PATH &&
+            git pull origin main &&
+            composer install --no-dev --optimize-autoloader &&
+            php artisan migrate --force &&
+            php artisan config:cache &&
+            php artisan route:cache &&
+            php artisan view:cache
+          "
+
+      # Test Laravel App with curl
+      - name: Test Laravel App with curl
+        run: |
+          curl http://$EC2_HOST
