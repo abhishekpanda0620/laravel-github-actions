@@ -41,6 +41,7 @@ jobs:
           cd my-laravel-app
           echo "$SSH_KEY" > private_key.pem
           chmod 600 private_key.pem
+          cat private_key.pem
           ssh -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST "
             cd $DEPLOY_PATH &&
             git pull origin main &&
