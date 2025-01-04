@@ -38,37 +38,37 @@ jobs:
           chmod 700 ~/.ssh
           
           # Write key file with proper line endings
-          echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key.pem
           
           # Set restrictive permissions
-          chmod 600 ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key.pem
           
           # Debug key file
           echo "Key file permissions:"
-          ls -la ~/.ssh/deploy_key
+          ls -la ~/.ssh/deploy_key.pem
           
           # Debug SSH key file (safely)
           echo "Checking SSH key file..."
-          if [ -f ~/.ssh/deploy_key ]; then
+          if [ -f ~/.ssh/deploy_key.pem ]; then
             echo "✅ SSH key file exists"
-            ls -l ~/.ssh/deploy_key
+            ls -l ~/.ssh/deploy_key.pem
           else
             echo "❌ SSH key file is missing"
           fi
           # Set correct permissions
-          chmod 600 ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key.pem
 
           # Add host key
           ssh-keyscan -H ${{ secrets.DEPLOY_SERVER }} >> ~/.ssh/known_hosts
 
           echo "Validating key format..."
-          ssh-keygen -l -f ~/.ssh/deploy_key || {
+          ssh-keygen -l -f ~/.ssh/deploy_key.pem || {
             echo "❌ Invalid key format"
             exit 1
           }
 
           # Test SSH connection with verbose output
-          ssh -v -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "echo 'SSH connection successful'
+          ssh -v -i ~/.ssh/deploy_key.pem -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "echo 'SSH connection successful'
           "
       - name: Deploy to EC2
         env:
@@ -77,7 +77,7 @@ jobs:
           DEPLOY_PATH: /var/www/laravel
 
         run: |
-          ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_SERVER "
+          ssh -i ~/.ssh/deploy_key.pem $DEPLOY_USER@$DEPLOY_SERVER "
             cd $DEPLOY_PATH &&
             git pull origin main &&
             composer install --no-dev --optimize-autoloader &&
@@ -92,8 +92,8 @@ jobs:
           DEPLOY_PATH: /var/www/laravel
           NGINX_CONF_SRC: ./nginx/laravel.conf
         run: |
-          scp -i ~/.ssh/deploy_key $NGINX_CONF_SRC ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }}:/etc/nginx/sites-available/laravel
-          ssh  -v -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "
+          scp -i ~/.ssh/deploy_key.pem $NGINX_CONF_SRC ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }}:/etc/nginx/sites-available/laravel
+          ssh  -v -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "
           sudo ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/laravel &&
           sudo systemctl restart nginx &&
           sudo chown -R www-data:www-data /var/www/laravel &&
