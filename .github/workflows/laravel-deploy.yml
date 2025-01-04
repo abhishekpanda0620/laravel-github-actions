@@ -29,21 +29,42 @@ jobs:
           composer install --no-dev --no-interaction --prefer-dist
           cp .env.example .env
           php artisan key:generate
+      - name: Setup SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          # Create .ssh directory with correct permissions
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
 
+          # Write the SSH key to a file
+          echo "$SSH_KEY" | base64 -d > ~/.ssh/deploy_key
+
+          # Debug SSH key file (safely)
+          echo "Checking SSH key file..."
+          if [ -f ~/.ssh/deploy_key ]; then
+            echo "✅ SSH key file exists"
+            ls -l ~/.ssh/deploy_key
+          else
+            echo "❌ SSH key file is missing"
+          fi
+          # Set correct permissions
+          chmod 600 ~/.ssh/deploy_key
+
+          # Add host key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+          # Test SSH connection with verbose output
+          ssh -v -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'
+          "
       - name: Deploy to EC2
         env:
-          EC2_USER: ${{ secrets.DEPLOY_USER}}
-          EC2_HOST: ${{ secrets.DEPLOY_SERVER }}
-          SSH_KEY: ${{ secrets.SSH_KEY }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
           DEPLOY_PATH: /var/www/laravel
+
         run: |
-          echo "EC2_USER: $EC2_USER"
-          echo "EC2_HOST: $EC2_HOST"
-          echo "DEPLOY_PATH: $DEPLOY_PATH"
-          echo "$SSH_KEY" > private_key.pem
-          chmod 600 private_key.pem
-          cat private_key.pem
-          ssh  -v -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST "
+          ssh -i ~/.ssh/deploy_key $EC2_USER@$EC2_HOST "
             cd $DEPLOY_PATH &&
             git pull origin main &&
             composer install --no-dev --optimize-autoloader &&
@@ -58,8 +79,8 @@ jobs:
           DEPLOY_PATH: /var/www/laravel
           NGINX_CONF_SRC: ./nginx/laravel.conf
         run: |
-          scp -i private_key.pem $NGINX_CONF_SRC $EC2_USER@$EC2_HOST:/etc/nginx/sites-available/laravel
-          ssh  -v -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST "
+          scp -i ~/.ssh/deploy_key $NGINX_CONF_SRC ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/etc/nginx/sites-available/laravel
+          ssh  -v -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
           sudo ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/laravel &&
           sudo systemctl restart nginx &&
           sudo chown -R www-data:www-data /var/www/laravel &&
