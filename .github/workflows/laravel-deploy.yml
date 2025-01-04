@@ -53,7 +53,7 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key.pem" \
             ./ \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }}:/var/www/laravel
-  
+
       - name: Deploy to EC2
         env:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -70,18 +70,25 @@ jobs:
             php artisan route:cache &&
             php artisan view:cache
           "
-        # Deploy Nginx configuration to EC2
+
+        # Deploy Nginx Config
       - name: Deploy Nginx Config
         env:
           DEPLOY_PATH: /var/www/laravel
           NGINX_CONF_SRC: ./nginx/laravel.conf
         run: |
+          # Check if nginx sites-available exists and is writable
+          ssh -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "if [ ! -d /etc/nginx/sites-available ]; then sudo mkdir -p /etc/nginx/sites-available; fi"
+
+          # Copy Nginx config
           scp -i ~/.ssh/deploy_key.pem $NGINX_CONF_SRC ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }}:/etc/nginx/sites-available/laravel
-          ssh  -v -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "
-          sudo ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/laravel &&
-          sudo systemctl restart nginx &&
-          sudo chown -R www-data:www-data /var/www/laravel &&
-          sudo chmod -R 755 /var/www/laravel/storage /var/www/laravel/bootstrap/cache
+
+          # Enable and restart nginx
+          ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "
+            sudo ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/laravel &&
+            sudo systemctl restart nginx &&
+            sudo chown -R www-data:www-data /var/www/laravel &&
+            sudo chmod -R 755 /var/www/laravel/storage /var/www/laravel/bootstrap/cache
           "
 
       # Test Laravel App with curl
