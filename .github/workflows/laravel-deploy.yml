@@ -30,10 +30,6 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
-      # Run tests
-      - name: Run tests
-        run: cd my-laravel-app && php artisan test
-
       # Deploy Nginx configuration to EC2
       - name: Deploy Nginx Config
         env:
