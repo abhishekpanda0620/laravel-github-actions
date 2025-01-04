@@ -87,18 +87,12 @@ jobs:
           ssh -i ~/.ssh/deploy_key.pem $DEPLOY_USER@$DEPLOY_SERVER "
             sudo rm -f /etc/nginx/sites-enabled/laravel.conf &&
             sudo chown $DEPLOY_USER:$DEPLOY_USER /etc/nginx/sites-available/laravel.conf &&
-            sudo chmod 664 /etc/nginx/sites-available/laravel.conf
-          "
-
-          # Enable and restart nginx
-          ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem $DEPLOY_USER@$DEPLOY_SERVER "
+            sudo chmod 664 /etc/nginx/sites-available/laravel.conf &&
             sudo ln -s /etc/nginx/sites-available/laravel.conf /etc/nginx/sites-enabled/laravel.conf &&
             sudo systemctl restart nginx 
           "
-
           "
-
-      # Test Laravel App with curl
+        # Test Laravel App with curl
       - name: Test Laravel App with curl
         run: |
           curl http://$DEPLOY_SERVER
