@@ -52,19 +52,19 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
 
           # Add host key
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.DEPLOY_SERVER }} >> ~/.ssh/known_hosts
 
           # Test SSH connection with verbose output
-          ssh -v -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'
+          ssh -v -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "echo 'SSH connection successful'
           "
       - name: Deploy to EC2
         env:
-          EC2_USER: ${{ secrets.EC2_USER }}
-          EC2_HOST: ${{ secrets.EC2_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
           DEPLOY_PATH: /var/www/laravel
 
         run: |
-          ssh -i ~/.ssh/deploy_key $EC2_USER@$EC2_HOST "
+          ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_SERVER "
             cd $DEPLOY_PATH &&
             git pull origin main &&
             composer install --no-dev --optimize-autoloader &&
@@ -79,8 +79,8 @@ jobs:
           DEPLOY_PATH: /var/www/laravel
           NGINX_CONF_SRC: ./nginx/laravel.conf
         run: |
-          scp -i ~/.ssh/deploy_key $NGINX_CONF_SRC ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/etc/nginx/sites-available/laravel
-          ssh  -v -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+          scp -i ~/.ssh/deploy_key $NGINX_CONF_SRC ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }}:/etc/nginx/sites-available/laravel
+          ssh  -v -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "
           sudo ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/laravel &&
           sudo systemctl restart nginx &&
           sudo chown -R www-data:www-data /var/www/laravel &&
@@ -90,4 +90,4 @@ jobs:
       # Test Laravel App with curl
       - name: Test Laravel App with curl
         run: |
-          curl http://$EC2_HOST
+          curl http://$DEPLOY_SERVER
