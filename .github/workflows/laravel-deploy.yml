@@ -37,7 +37,9 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_KEY }}
           DEPLOY_PATH: /var/www/laravel
         run: |
-          cd my-laravel-app
+          echo "EC2_USER: $EC2_USER"
+          echo "EC2_HOST: $EC2_HOST"
+          echo "DEPLOY_PATH: $DEPLOY_PATH"
           echo "$SSH_KEY" > private_key.pem
           chmod 600 private_key.pem
           cat private_key.pem
