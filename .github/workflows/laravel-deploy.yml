@@ -76,22 +76,21 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
         run: |
-
           # Ensure nginx sites-available exists and is writable
           ssh -i ~/.ssh/deploy_key.pem $DEPLOY_USER@$DEPLOY_SERVER "if [ ! -d /etc/nginx/sites-available ]; then sudo mkdir -p /etc/nginx/sites-available; fi"
-
+                  
           # Copy Nginx config
           scp -i ~/.ssh/deploy_key.pem ./nginx/laravel.conf $DEPLOY_USER@$DEPLOY_SERVER:/etc/nginx/sites-available/laravel.conf
-
+                  
           # Set permissions for Nginx config
           ssh -i ~/.ssh/deploy_key.pem $DEPLOY_USER@$DEPLOY_SERVER "
-            sudo rm -f /etc/nginx/sites-enabled/laravel.conf &&
-            sudo chown $DEPLOY_USER:$DEPLOY_USER /etc/nginx/sites-available/laravel.conf &&
-            sudo chmod 664 /etc/nginx/sites-available/laravel.conf &&
-            sudo ln -s /etc/nginx/sites-available/laravel.conf /etc/nginx/sites-enabled/laravel.conf &&
-            sudo systemctl restart nginx 
+              sudo rm -f /etc/nginx/sites-enabled/laravel.conf &&
+              sudo chown $DEPLOY_USER:$DEPLOY_USER /etc/nginx/sites-available/laravel.conf &&
+              sudo chmod 664 /etc/nginx/sites-available/laravel.conf &&
+              sudo ln -s /etc/nginx/sites-available/laravel.conf /etc/nginx/sites-enabled/laravel.conf &&
+              sudo systemctl restart nginx
           "
-          "
+                  
         # Test Laravel App with curl
       - name: Test Laravel App with curl
         run: |
