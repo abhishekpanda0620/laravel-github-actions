@@ -46,13 +46,12 @@ jobs:
           # Test SSH connection
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "echo 'SSH connection successful'"
 
-      - name: Clone repository if not already present
+      - name: Sync repository if not already present
         run: |
-          ssh -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "
-            if [ ! -d $DEPLOY_PATH/.git ]; then
-              sudo rm -rf $DEPLOY_PATH &&
-              sudo git clone <repository-url> $DEPLOY_PATH
-            fi
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key.pem" \
+            ./ \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }}:/var/www/laravel
           "
       - name: Deploy to EC2
         env:
