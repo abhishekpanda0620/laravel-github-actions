@@ -85,6 +85,7 @@ jobs:
 
           # Set permissions for Nginx config
           ssh -i ~/.ssh/deploy_key.pem $DEPLOY_USER@$DEPLOY_SERVER "
+            sudo rm -f /etc/nginx/sites-enabled/laravel.conf &&
             sudo chown $DEPLOY_USER:$DEPLOY_USER /etc/nginx/sites-available/laravel.conf &&
             sudo chmod 664 /etc/nginx/sites-available/laravel.conf
           "
