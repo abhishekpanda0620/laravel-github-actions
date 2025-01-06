@@ -48,14 +48,16 @@ jobs:
 
       - name: Sync repository if not already present
         run: |
+          ssh -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "
+           sudo chown -R ${{ secrets.DEPLOY_USER }}:${{ secrets.DEPLOY_USER }} /var/www/laravel"
+           
           rsync -avz --delete \
             --exclude 'vendor' '.git' \
             -e "ssh -i ~/.ssh/deploy_key.pem" \
             ./ \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }}:/var/www/laravel
 
-          ssh -i ~/.ssh/deploy_key.pem ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "
-           sudo chown -R ${{ secrets.DEPLOY_USER }}:${{ secrets.DEPLOY_USER }} /var/www/laravel
+          
 
       - name: Deploy to EC2
         env:
